@@ -1,0 +1,77 @@
+setwd
+getwd()
+train <- read.csv('C:\\Users\\USER\\Desktop\\DSP14\\boston train.csv',header = TRUE, sep=',', na.strings =c(""))
+summary(train)
+str(train)
+library(lattice)
+library(survival)
+library(Formula)
+library(ggplot2)
+library(Hmisc)
+library(e1071)
+sum(is.na(train))
+boxplot(train)
+#correlation
+correlation <- cor(train)
+write.csv(correlation, "correlationmatrix.csv")
+
+train$chas <- as.factor(train$chas)
+names(train)
+linear_model <- lm(medv~ID+crim+zn+indus+chas+nox+rm+age+dis+rad+tax+ptratio+black+lstat,data= train)
+summary(linear_model)
+histogram(train$crim)
+
+train$pred_lm <- predict(linear_model,train)
+train$resid_lm <- train$medv  - train$pred_lm
+train$sqresid_lm <- train$resid_lm*train$resid_lm
+mean_squared_error_lm <- mean(train$sqresid_lm)
+root_mean_squared_error_lm <- sqrt(mean_squared_error_lm)
+
+##################-----decision trees-------------------###########################
+install.packages('party')
+library('party') #decision tree
+install.packages('grid')
+install.packages('mvtnorm')
+install.packages('modetools')
+install.packages('strucchange')
+install.packages('stats4')
+install.packages('zoo')
+install.packages('sandwich')
+decision_tree <- ctree(medv~ID+crim+zn+indus+chas+nox+rm+age+dis+rad+tax+ptratio+black+lstat,data= train)
+plot(decision_tree)
+summary(decision_tree)
+train$pred <- predict(decision_tree,train)
+train$resid <- train$medv  - train$pred 
+train$sqresid <- train$resid*train$resid
+mean_squared_error <- mean(train$sqresid)
+root_mean_squared_error <- sqrt(mean_squared_error)
+
+
+###############-----randomforest-----############
+install.packages('randomForest')
+library('randomForest')
+random_forest <- randomForest(medv~ID+crim+zn+indus+chas+nox+rm+age+dis+rad+tax+ptratio+black+lstat,data= train)
+train$pred_rf <- predict(random_forest,train)
+train$resid_rf <- train$medv  - train$pred_rf 
+train$sqresid_rf <- train$resid_rf*train$resid_rf
+mean_squared_error_rf <- mean(train$sqresid_rf)
+root_mean_squared_error_rf <- sqrt(mean_squared_error_rf)
+
+#############----support vector machine----####################
+install.packages('e1071')
+library(e1071)
+svm_model <- svm(medv~ID+crim+zn+indus+chas+nox+rm+age+dis+rad+tax+ptratio+black+lstat, kernel='poly',data= train)
+#svm-kernel; cost ; gamma - hyper parameters
+#svm- kernel - radial / poly / linear
+train$pred_svm <- predict(svm_model,train)
+train$resid_svm <- train$medv  - train$pred_svm 
+train$sqresid_svm <- train$resid_svm*train$resid_svm
+mean_squared_error_svm <- mean(train$sqresid_svm)
+root_mean_squared_error_svm <- sqrt(mean_squared_error_svm)
+
+
+#########--------test data-----------###############
+test <- read.csv('C:\\Users\\USER\\Desktop\\DSP14\\boston test.csv',header = TRUE, sep=',', na.strings =c(""))
+test$medv_test <- predict(random_forest , test)
+write.csv(test, "medvtest.csv")
+str(test)
